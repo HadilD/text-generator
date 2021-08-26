@@ -1,25 +1,22 @@
+import nltk
 
-filename = input()
-corpus = open(filename, "r", encoding="utf-8")
+file_name = input()
+file = open(file_name, "r", encoding="utf-8")
+bigrams = list(nltk.bigrams(file.read().split()))
+file.close()
 
-corpus_string = corpus.read()
-tokens = corpus_string.split()
+markov_model = {}
+for head, tail in bigrams:
+    markov_model.setdefault(head, {})
+    markov_model[head].setdefault(tail, 0)
+    markov_model[head][tail] += 1
 
-print("Corpus statistics")
-print("All tokens: ", len(tokens))
-print("Unique tokens: ", len(set(tokens)))
-
-while True:
-    index = input()
-    if index == 'exit':
-        exit()
+request = input()
+while request != 'exit':
+    print(f"Head: {request}")
     try:
-        index_int = int(index)
-        print(tokens[index_int])
-    except IndexError:
-        print("IndexError. Please input an integer that is in the range of the corpus.")
-    except ValueError:
-        print("TypeError. Please enter correct value.")
-
-
-
+        for tail in markov_model[request]:
+            print(f"Tail: {tail}    Count: {markov_model[request][tail]}")
+    except KeyError:
+        print('The requested word is not in the model. Please input another word.')
+    request = input()
