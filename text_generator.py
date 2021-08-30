@@ -1,22 +1,53 @@
 import nltk
+import random
 
 file_name = input()
 file = open(file_name, "r", encoding="utf-8")
-bigrams = list(nltk.bigrams(file.read().split()))
+# nltk.trigrams returns a list of 3-tuples
+trigrams = list(nltk.trigrams(file.read().split()))
 file.close()
 
-markov_model = {}
-for head, tail in bigrams:
-    markov_model.setdefault(head, {})
-    markov_model[head].setdefault(tail, 0)
-    markov_model[head][tail] += 1
+model = {}
+for trigram in trigrams:
+    head = trigram[0] + " " + trigram[1]
+    tail = trigram[2]
+    model.setdefault(head, {})
+    model[head].setdefault(tail, 0)
+    model[head][tail] += 1
 
-request = input()
-while request != 'exit':
-    print(f"Head: {request}")
-    try:
-        for tail in markov_model[request]:
-            print(f"Tail: {tail}    Count: {markov_model[request][tail]}")
-    except KeyError:
-        print('The requested word is not in the model. Please input another word.')
-    request = input()
+possible_starting_heads = []
+sentence_ending_punctuation = (".", "!", "?")
+for key in model.keys():
+    if key[0].isupper() and not key.split(" ")[0].endswith(sentence_ending_punctuation):
+        possible_starting_heads.append(key)
+
+# Generate 10 pseudo-sentences based on model
+for _ in range(10):
+    tokens = []
+    # Chooses a random starting head from list
+    head = random.choice(possible_starting_heads)
+    # print("Head: ", head)
+    tokens.append(head)
+    while True:
+        possible_tails = list(model[head].keys())
+        weights = list(model[head].values())
+        # Randomly select elements from list taking their weights into account
+        most_probable_tail = random.choices(possible_tails, weights, k=1)[0]
+        # print("Most probable tail: ", most_probable_tail)
+
+        if most_probable_tail.endswith(sentence_ending_punctuation) and len(tokens) >= 5:
+            tokens.append(most_probable_tail)
+            # print("Chosen tail and ending sentence: ", most_probable_tail)
+            break
+        elif not most_probable_tail.endswith(sentence_ending_punctuation):
+            tokens.append(most_probable_tail)
+            # print("Chosen tail: ", most_probable_tail)
+            head = head.split(" ")[1] + " " + most_probable_tail
+        elif most_probable_tail.endswith(sentence_ending_punctuation) and len(tokens) < 5:
+            # print("Ignoring tail: ", most_probable_tail)
+            tokens = []
+            head = random.choice(possible_starting_heads)
+            tokens.append(head)
+
+    pseudo_sentence = " ".join(tokens)
+    print(pseudo_sentence)
